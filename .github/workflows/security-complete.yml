@@ -152,9 +152,10 @@ jobs:
           echo "✅ Aplicación iniciada correctamente."
       # 11. DAST (OWASP ZAP)
       - name: DAST Scan (OWASP ZAP)
-        uses: zaproxy/action-full-scan@v0.11.0
+        uses: zaproxy/action-full-scan@v0.12.0
+        continue-on-error: true  # <--- AGREGA ESTO: Si falla el reporte, no rompe el pipeline
         with:
           target: 'http://localhost:8080'
-          docker_name: 'zaproxy/zap-stable'
-          cmd_options: '-a -j -l WARN -z "-addoninstallall"' # Opciones para escaneo automático sin interacción
+          artifact_name: 'zap-results'  # <--- AGREGA ESTO: Un nombre limpio sin guiones bajos
+          cmd_options: '-a -j -l WARN -z "-addoninstallall"'
           allow_issue_writing: false
