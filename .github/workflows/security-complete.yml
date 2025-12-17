@@ -136,10 +136,20 @@ jobs:
       # 10. Ejecutar contenedor para DAST
       - name: Run Container
         run: |
+          # Arrancamos el contenedor
           docker run -d -p 8080:8080 --name test-app myapp:${{ github.sha }}
-          # Esperar a que la aplicación levante (health check simple)
-          timeout 60s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8080)" != "200" ]]; do sleep 5; done' || false
-
+          
+          echo "⏳ Esperando a que la aplicación inicie..."
+          
+          # Intentamos conectar durante 60 segundos. Si falla, mostramos los logs.
+          if ! timeout 60s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8080)" != "200" ]]; do sleep 5; done'; then
+            echo "❌ ERROR: La aplicación no respondió a tiempo."
+            echo "🔍 Mostrando logs del contenedor para diagnosticar:"
+            docker logs test-app
+            exit 1
+          fi
+          
+          echo "✅ Aplicación iniciada correctamente."
       # 11. DAST (OWASP ZAP)
       - name: DAST Scan (OWASP ZAP)
         uses: zaproxy/action-full-scan@v0.11.0
