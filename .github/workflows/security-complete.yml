@@ -1,4 +1,4 @@
-name: Complete Security Pipeline
+name: Pipeline de Seguridad Completo
 
 on:
   push:
@@ -148,6 +148,3 @@ jobs:
           docker_name: 'owasp/zap2docker-stable'
           cmd_options: '-a -j -l WARN -z "-addoninstallall"' # Opciones para escaneo automático sin interacción
           allow_issue_writing: false
-          
-      # El reporte de ZAP se maneja a veces diferente, pero el action suele intentar adjuntarlo a Issues. 
-      # Aquí simplemente dejamos que corra.
