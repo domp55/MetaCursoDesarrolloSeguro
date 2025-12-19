@@ -6,45 +6,27 @@ on:
 
 jobs:
   sca:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ "ubuntu-20.04" ] # [ "macos-latest", "windows-latest", "ubuntu-20.04" ]
-        # Test once with explicit manifest_file, and once without
-        manifest_file: [ "pom.xml" ]
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
-    name: SCA Java project
+    name: Dependency Scan (Trivy)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
-      - name: Checkout action
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Java
-        uses: actions/setup-java@v2
+      - name: Dependency Scan (Trivy FS)
+        uses: aquasecurity/trivy-action@master
         with:
-          distribution: temurin
-          java-version: 11
-          cache: maven
-
-      - name: Install SCA tool (CRDA)
-        uses: redhat-actions/openshift-tools-installer@v1
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-sca-results.sarif'
+          severity: 'CRITICAL,HIGH'
+      
+      - name: Upload SCA Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
-          source: github
-          github_pat: ${{ github.token }}
-          crda: "latest"
-
-      - name: Print JSON analysis report
-        if: ${{ always() && steps.scan.outputs.crda_report_json }}
-        run: cat ${{ steps.scan.outputs.crda_report_json }}
-
-      - name: Print SARIF analysis report
-        if: ${{ always() && steps.scan.outputs.crda_report_sarif }}
-        run: cat ${{ steps.scan.outputs.crda_report_sarif }}
-
-      - name: Print Report Link
-        run: echo ${{ steps.scan.outputs.report_link }}
-
-      - name: Print Artifact Name
-        run: echo ${{ steps.scan.outputs.artifact_name }}
+          sarif_file: 'trivy-sca-results.sarif'
+          category: 'trivy-sca'

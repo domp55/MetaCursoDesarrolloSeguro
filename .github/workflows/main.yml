@@ -1,10 +1,10 @@
 name: 01 - Main CI / CD Pipeline
 
 on:
-#  push:
-#    paths-ignore:
-#      - '**/*.md'
-#     - '**/*.txt'
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
 
@@ -19,7 +19,13 @@ permissions:
   packages: write
 
 jobs:
+  secret-scan:
+    name: Secret Scan
+    uses: ./.github/workflows/secret-scan.yml
+    secrets: inherit
+
   build:
+    needs: secret-scan
     name: Build
     uses: ./.github/workflows/build.yml
     secrets: inherit  # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idsecretsinherit
@@ -47,7 +53,8 @@ jobs:
 
   #Creación de Docker
   docker:
-    needs: build
+    needs: [sast, sca] # Wait for security checks before building image? Or just parallel? security-complete built image later. 
+                       # Usually good to fail fast if SAST/SCA fail.
     name: Build docker image
     uses: ./.github/workflows/docker.yml
     secrets: inherit
@@ -64,7 +71,7 @@ jobs:
 
   #Análisis de código Dinámico
   dast:
-    needs: [build,docker]
+    needs: [container-image-scan, docker]
     name: DAST Scan
     uses: ./.github/workflows/dast.yml
     secrets: inherit
