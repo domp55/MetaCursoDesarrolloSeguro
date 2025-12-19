@@ -39,15 +39,13 @@ jobs:
         with:
           category: "/language:java"
 
-      - name: Run Spotbugs
-        uses: jmservera/spotbugs-github-action@v0.1.0-alpha
+      - name: Run SpotBugs (Maven)
+        run: mvn com.github.spotbugs:spotbugs-maven-plugin:4.7.3.6:spotbugs -Dspotbugs.sarifOutput=true -Dspotbugs.xmlOutput=false -Dspotbugs.failOnError=false
         continue-on-error: true
-        with:
-          target: './target'
-          
+
       - name: Upload Spotbugs Report
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'results.sarif'
+          sarif_file: 'target/spotbugs.sarif'
           category: 'spotbugs'
