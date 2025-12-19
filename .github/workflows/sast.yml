@@ -40,12 +40,15 @@ jobs:
           category: "/language:java"
 
       - name: Run SpotBugs (Maven)
-        run: mvn com.github.spotbugs:spotbugs-maven-plugin:4.7.3.6:spotbugs -Dspotbugs.sarifOutput=true -Dspotbugs.xmlOutput=false -Dspotbugs.failOnError=false
+        run: |
+          mvn com.github.spotbugs:spotbugs-maven-plugin:4.7.3.6:spotbugs -Dspotbugs.sarifOutput=true -Dspotbugs.xmlOutput=false -Dspotbugs.failOnError=false
+          echo "Listing target directory:"
+          ls -la target/
         continue-on-error: true
 
       - name: Upload Spotbugs Report
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'target/spotbugs.sarif'
+          sarif_file: 'target/spotbugsSarif.json'
           category: 'spotbugs'
