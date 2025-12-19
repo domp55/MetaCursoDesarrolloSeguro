@@ -1,38 +1,54 @@
 name: 05 License Compliance
 
 on:
-    workflow_dispatch:
-    workflow_call:
+  workflow_dispatch:
+  workflow_call:
 
 jobs:
-    license-finder:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
+  license-finder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-            - name: Run License Finder
-              uses: jmservera/license-finder-action@main
-              with:
-                permitted-licenses: MIT, Apache-2.0, 
-                approved-dependencies:  | 
-                    junit,junit-jupiter
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
 
-            - name: Publish Test Results
-              uses: EnricoMi/publish-unit-test-result-action@v2.2.0
-              if: always()
-              with:
-                junit_files: "license_finder_report.xml"
-                check_name: "License Compliance Check"         
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
 
-            - name: 'Upload Dependency Review Report'
-              if: always()
-              uses: actions/upload-artifact@v3
-              with:
-                name: license-finder-report
-                path: ${{ github.workspace }}/license_finder_report.xml
+      - name: Install License Finder
+        run: gem install license_finder
 
+      - name: Run License Finder
+        run: |
+          # Add permitted licenses
+          license_finder permitted_licenses add MIT "Apache 2.0" Apache-2.0
+          
+          # Add approvals for specific dependencies
+          # We add both junit and junit-jupiter to be safe
+          license_finder approvals add junit
+          license_finder approvals add junit-jupiter
+          
+          # Generate report in JUnit format for the publisher
+          license_finder report --format junit > license_finder_report.xml
+          
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2.2.0
+        if: always()
+        with:
+          junit_files: "license_finder_report.xml"
+          check_name: "License Compliance Check"         
 
-
-              
-              
+      - name: 'Upload Dependency Review Report'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-finder-report
+          path: license_finder_report.xml
